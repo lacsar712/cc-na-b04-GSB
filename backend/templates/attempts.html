@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}被拦下的重复登记{% endblock %}
+{% block body %}
+<h1>被拦下的重复登记</h1>
+<table>
+  <thead><tr><th>灯号</th><th>操作者</th><th>发生时刻</th><th>撞上的实测</th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{{ row.aid_code }}</td>
+      <td>{{ row.attempted_by }}</td>
+      <td>{{ row.attempted_at|date:"Y-m-d H:i:s" }}</td>
+      <td>
+        <a href="{% url 'detail' row.existing.pk %}">{{ row.existing.aid_code }}</a>
+        <span class="{% if row.existing.verdict == '合格' %}ok{% else %}bad{% endif %}">{{ row.existing.verdict }}</span>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4">还没有被拦下的尝试</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

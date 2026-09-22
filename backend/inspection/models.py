@@ -13,3 +13,18 @@ class Inspection(models.Model):
 
     class Meta:
         ordering = ["-id"]
+
+
+class DuplicateAttempt(models.Model):
+    aid_code = models.CharField("航标编号", max_length=40)
+    attempted_by = models.CharField("操作者", max_length=64)
+    attempted_at = models.DateTimeField("发生时刻", auto_now_add=True)
+    existing = models.ForeignKey(
+        Inspection,
+        verbose_name="撞上的实测",
+        on_delete=models.CASCADE,
+        related_name="duplicate_attempts",
+    )
+
+    class Meta:
+        ordering = ["-id"]

@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block body %}
 <h1>登记巡检</h1>
+{% if duplicate %}
+<p class="err">{{ duplicate.aid_code }} 今天已有记录，判词「{{ duplicate.verdict }}」（{{ duplicate.note }}），本次未写入。
+  <a href="{% url 'detail' duplicate.pk %}">查看已有记录</a></p>
+{% endif %}
 {% if error %}<p class="err">{{ error }}</p>{% endif %}
 <form class="card" method="post">
   {% csrf_token %}
