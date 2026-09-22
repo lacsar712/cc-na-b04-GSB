@@ -2,6 +2,15 @@
 {% block body %}
 <h1>登记巡检</h1>
 {% if error %}<p class="err">{{ error }}</p>{% endif %}
+{% if conflict %}
+<div class="warn">
+  该灯号今日已有登记记录，本次提交未写入：
+  <strong>{{ conflict.aid_code }}</strong>
+  的判词为
+  <span class="{% if conflict.verdict == '合格' %}ok{% else %}bad{% endif %}">{{ conflict.verdict }} · {{ conflict.note }}</span>。
+  去看<a href="{% url 'detail' conflict.pk %}">那条实测</a>。
+</div>
+{% endif %}
 <form class="card" method="post">
   {% csrf_token %}
   <label>航标编号</label>

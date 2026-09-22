@@ -1,9 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from inspection.models import Inspection
+from inspection.models import Inspection, RejectedAttempt
 from inspection.rules import judge
 
 
@@ -56,11 +57,18 @@ def detail_view(request, pk):
 
 
 @login_required
+def attempts_view(request):
+    attempts = RejectedAttempt.objects.select_related("conflicting_inspection").all()
+    return render(request, "attempts.html", {"attempts": attempts})
+
+
+@login_required
 @require_http_methods(["GET", "POST"])
 def create_view(request):
     if not _can_write(request.user):
         return HttpResponseForbidden("仅巡检员可登记灯光巡检")
     error = ""
+    conflict = None
     if request.method == "POST":
         try:
             measured = float(request.POST["measured_cd"])
@@ -72,15 +80,30 @@ def create_view(request):
         except (KeyError, ValueError):
             error = "请填编号和三项数值"
         else:
-            verdict, note = judge(measured, required, bearing)
-            row = Inspection.objects.create(
-                aid_code=code,
-                measured_cd=measured,
-                required_cd=required,
-                bearing_error_deg=bearing,
-                verdict=verdict,
-                note=note,
-                created_by=request.user.username,
+            today = timezone.localdate()
+            existing = (
+                Inspection.objects.filter(aid_code=code, created_at__date=today)
+                .order_by("id")
+                .first()
             )
-            return redirect("detail", pk=row.pk)
-    return render(request, "form.html", {"error": error})
+            if existing is not None:
+                # 同一灯号同一自然日只能有一条实测：不写入，只记下这次尝试。
+                RejectedAttempt.objects.create(
+                    aid_code=code,
+                    attempted_by=request.user.username,
+                    conflicting_inspection=existing,
+                )
+                conflict = existing
+            else:
+                verdict, note = judge(measured, required, bearing)
+                row = Inspection.objects.create(
+                    aid_code=code,
+                    measured_cd=measured,
+                    required_cd=required,
+                    bearing_error_deg=bearing,
+                    verdict=verdict,
+                    note=note,
+                    created_by=request.user.username,
+                )
+                return redirect("detail", pk=row.pk)
+    return render(request, "form.html", {"error": error, "conflict": conflict})

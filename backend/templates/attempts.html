@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>被拦登记尝试</h1>
+<p>同一灯号在同一个自然日重复登记时，提交会被拦下、不会新增实测；这些尝试记在这里。</p>
+<table>
+  <thead><tr><th>发生时刻</th><th>操作者</th><th>灯号</th><th>撞上的实测</th><th>实测判词</th></tr></thead>
+  <tbody>
+  {% for a in attempts %}
+    <tr>
+      <td>{{ a.attempted_at|date:"Y-m-d H:i:s" }}</td>
+      <td>{{ a.attempted_by }}</td>
+      <td>{{ a.aid_code }}</td>
+      <td><a href="{% url 'detail' a.conflicting_inspection.pk %}">{{ a.conflicting_inspection.aid_code }} · {{ a.conflicting_inspection.measured_cd }} cd</a></td>
+      <td class="{% if a.conflicting_inspection.verdict == '合格' %}ok{% else %}bad{% endif %}">{{ a.conflicting_inspection.verdict }} · {{ a.conflicting_inspection.note }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5">还没有被拦下的尝试</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
